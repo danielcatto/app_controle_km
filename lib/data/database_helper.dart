@@ -1,53 +1,104 @@
-import 'dart:io';
 import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper instance = DatabaseHelper._init();
-  static Database? _database;
-  DatabaseHelper._init();
+  // Singleton
+  DatabaseHelper._privateConstructor();
 
+  static final DatabaseHelper instance =
+      DatabaseHelper._privateConstructor();
+
+  static Database? _database;
+
+  // Retorna o banco
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB('controle_km.db');
+    if (_database != null) {
+      return _database!;
+    }
+
+    _database = await _initDatabase();
     return _database!;
   }
 
-  Future<Database> _initDB(String fileName) async {
-    final docsDir = await getApplicationDocumentsDirectory();
-    final path = join(docsDir.path, fileName);
+  // Inicializa o banco
+  Future<Database> _initDatabase() async {
+    final databasesPath = await getDatabasesPath();
+
+    final path = join(
+      databasesPath,
+      'controle_km.db',
+    );
+
     return await openDatabase(
       path,
       version: 1,
-      onCreate: _createDB,
+      onCreate: _onCreate,
     );
   }
 
-  Future _createDB(Database db, int version) async {
+  // Criação das tabelas
+  Future<void> _onCreate(
+    Database db,
+    int version,
+  ) async {
     await db.execute('''
-      CREATE TABLE calculos (
+      CREATE TABLE deslocamentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        distancia REAL NOT NULL,
-        litros REAL NOT NULL,
-        resultado REAL NOT NULL,
-        createdAt TEXT NOT NULL
+        km REAL NOT NULL,
+        data TEXT NOT NULL
       )
     ''');
   }
 
-  Future<int> insertCalculo(Map<String, dynamic> row) async {
-    final db = await instance.database;
-    return await db.insert('calculos', row);
+  // Inserir deslocamento
+  Future<int> inserirDeslocamento(double km) async {
+    final db = await database;
+
+    return await db.insert(
+      'deslocamentos',
+      {
+        'km': km,
+        'data': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
-  Future<List<Map<String, dynamic>>> fetchCalculos() async {
-    final db = await instance.database;
-    return await db.query('calculos', orderBy: 'id DESC');
+  // Listar deslocamentos
+  Future<List<Map<String, dynamic>>> listarDeslocamentos() async {
+    final db = await database;
+
+    return await db.query(
+      'deslocamentos',
+      orderBy: 'id DESC',
+    );
   }
 
-  Future close() async {
-    final db = await instance.database;
-    await db.close();
+  // Somar todos os quilômetros
+  Future<double> totalKm() async {
+    final db = await database;
+
+    final resultado = await db.rawQuery('''
+      SELECT SUM(km) AS total
+      FROM deslocamentos
+    ''');
+
+    final total = resultado.first['total'];
+
+    if (total == null) {
+      return 0.0;
+    }
+
+    return (total as num).toDouble();
+  }
+
+  // Excluir um deslocamento
+  Future<int> excluirDeslocamento(int id) async {
+    final db = await database;
+
+    return await db.delete(
+      'deslocamentos',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
