@@ -1,8 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:controle_km/data/database_helper.dart';
+
+//import 'package:sqflite/sqflite.dart';
+//import 'package:path/path.dart';
+
+class AddPage extends StatefulWidget {
+  const AddPage({Key? key}) : super(key: key);
+
+  @override
+  State<AddPage> createState() => _AddPageState();
+}
 
 
-class Addpage extends StatelessWidget {
-  const Addpage({Key? key}) : super(key: key);
+
+class _AddPageState extends State<AddPage> {
+  final TextEditingController _kmController = TextEditingController();
+
+  
+
+  @override
+  void dispose() {
+    _kmController.dispose();
+    super.dispose();
+  }
+
+  void _salvarKm() async {
+    final texto = _kmController.text.replaceAll(',', '.');
+    final km = double.tryParse(texto);
+
+    if (km == null || km <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, informe um valor de Km válido!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await DatabaseHelper.instance.inserirDeslocamento(km);
+
+      if (!mounted) return;
+
+      _kmController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Deslocamento de $km Km salvo com sucesso!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao salvar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,34 +72,43 @@ class Addpage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            Icons.description,
+            Icons.drive_eta,
             size: 80,
             color: Colors.blue,
           ),
           const SizedBox(height: 24),
           const Text(
-            'Sobre o app',
+            'Adicionar deslocamento',
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 25,
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 24),
-                    
-          Padding(
-            // Aplica 16 pixels de margem/espaçamento em todos os lados
-            padding: const EdgeInsets.all(20.0), 
-            child: const Text(
-              'Esta aplicação foi desenvolvida para realizar os cálculos de rodagem de chamados dos técnicos de campo, seguindo as regras de negócio da Diebold Nixdorf.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+          Column(
+            children: [
+              SizedBox(
+                width: 200,
+                child: TextField(
+                  controller: _kmController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Km rodado',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ),
-            ),
-          )
-
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  fixedSize: const Size(120, 40),
+                ),
+                onPressed: _salvarKm,
+                child: const Text('OK'),
+              )
+            ],
+          ),
         ],
       ),
     );

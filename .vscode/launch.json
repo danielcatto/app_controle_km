@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "app_controle_km (Flutter SM A356E)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "deviceId": "" // <-- Essa linha força o envio para o celular antigo
+    }
+  ]
+}

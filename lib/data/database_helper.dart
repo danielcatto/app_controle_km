@@ -5,8 +5,7 @@ class DatabaseHelper {
   // Singleton
   DatabaseHelper._privateConstructor();
 
-  static final DatabaseHelper instance =
-      DatabaseHelper._privateConstructor();
+  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
 
   static Database? _database;
 
@@ -100,5 +99,12 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // Excluir TODOS os deslocamentos
+  Future<void> deletarTodosDeslocamentos() async {
+    final db = await database;
+
+    await db.delete('deslocamentos');
   }
 }

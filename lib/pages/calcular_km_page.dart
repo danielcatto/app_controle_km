@@ -1,6 +1,6 @@
 import 'package:controle_km/controllers/calcular_consumo.dart';
-import 'package:controle_km/data/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:controle_km/data/database_helper.dart';
 
 class CalcularKmPage extends StatefulWidget {
   const CalcularKmPage({Key? key}) : super(key: key);
@@ -12,44 +12,93 @@ class CalcularKmPage extends StatefulWidget {
 class _CalcularKmPageState extends State<CalcularKmPage> {
   final TextEditingController _distController = TextEditingController();
   final TextEditingController _litrosController = TextEditingController();
+
   double? _resultado;
+  double? _km_total;
 
+  List<Map<String, dynamic>> _deslocamentos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDeslocamentos();
+  }
+
+  //CARREGA DADOS PARA A DADOS
+  Future<void> _carregarDeslocamentos() async {
+    final dados = await DatabaseHelper.instance.listarDeslocamentos();
+
+    double total = 0.0;
+
+    for (final deslocamento in dados) {
+      total += (deslocamento['km'] as num).toDouble();
+    }
+    _km_total = total;
+    if (!mounted) return;
+
+    setState(() {
+      _deslocamentos = dados;
+      _km_total;
+    });
+  }
+
+  //BOTÃO CALCULAR
   Future<void> _calcular() async {
-    final dist = double.tryParse(_distController.text.replaceAll(',', '.'));
-    final litros = double.tryParse(_litrosController.text.replaceAll(',', '.'));
+    final litros = double.tryParse(
+      _litrosController.text.replaceAll(',', '.'),
+    );
 
-    if (dist == null || litros == null || litros == 0) {
-      setState(() => _resultado = null);
+    if (litros == null || litros <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Insira valores válidos')));
+        const SnackBar(
+          content: Text('Insira valores válidos'),
+        ),
+      );
+
       return;
     }
 
     final calcular = CalcularConsumo();
-    final res = calcular.calcularConsumo(dist, litros);
-    setState(() => _resultado = res);
 
-    // salvar no banco
-    /*
-    try {
-      await DatabaseHelper.instance.insertCalculo({
-        'distancia': dist,
-        'litros': litros,
-        'resultado': res,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Cálculo salvo')));
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erro ao salvar: $e')));
-    }*/
+    final resultado = calcular.calcularConsumo(
+      _km_total!,
+      litros,
+    );
+
+    setState(() {
+      _resultado = resultado;
+    });
   }
+  //FINAL DOS CALCULOS DA FUNÇÃO CALULAR()
+
+  //Deletar tudo
+
+  //BOTÃO CALCULAR
+  Future<void> _deletarTudo() async {
+    await DatabaseHelper.instance.deletarTodosDeslocamentos();
+
+    if (!mounted) return;
+
+    setState(() {
+      _deslocamentos = [];
+      _km_total = 0.0;
+      _resultado = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Todos os deslocamentos foram deletados!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+//final de deletar tudo
 
   @override
   void dispose() {
     _distController.dispose();
     _litrosController.dispose();
+
     super.dispose();
   }
 
@@ -60,32 +109,115 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Calcular consumo (km/l)', style: TextStyle(fontSize: 18)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _distController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Distância (km)'),
+          const Text(
+            'Calcular consumo (km/l)',
+            style: TextStyle(
+              fontSize: 18,
+            ),
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: 12),
+
           TextField(
             controller: _litrosController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Litros consumidos'),
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            decoration: const InputDecoration(
+              labelText: 'Litros consumidos',
+            ),
           ),
+
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: _calcular, child: const Text('Calcular')),
+
+          Text(
+            'Km total: $_km_total',
+          ),
+
+          const SizedBox(height: 12),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(
+                  153, 121, 119, 119), // Cor do fundo do botão
+              foregroundColor: const Color.fromARGB(
+                  255, 253, 252, 252), // Cor do texto e ícone
+              minimumSize: const Size(20, 45), // Largura: 200px | Altura: 45px
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(8), // Bordas arredondadas (opcional)
+              ),
+            ),
+            onPressed: _calcular,
+            child: const Text('Calcular'),
+          ),
+
           const SizedBox(height: 20),
+
           if (_resultado != null)
             Center(
               child: Text(
-                '${_resultado!.toStringAsFixed(2)}l \nPara você abastecer',
-                style: const TextStyle(fontSize: 20),
+                '${_resultado!.toStringAsFixed(2)} Litros\n'
+                'Para você abastecer',
+                style: const TextStyle(
+                  fontSize: 20,
+                ),
               ),
             ),
-            
+
           if (_resultado == null)
-            const Text('Preencha valores válidos para calcular.'),
+            const Text(
+              'Preencha valores válidos para calcular.',
+            ),
+
+          //BOTÃO DELETE
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, // Cor do fundo do botão
+              foregroundColor: Colors.white, // Cor do texto e ícone
+              minimumSize: const Size(20, 45), // Largura: 200px | Altura: 45px
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(8), // Bordas arredondadas (opcional)
+              ),
+            ),
+            onPressed: _deletarTudo,
+            child: const Text('Deletar Tudo'),
+          ),
+          // ######################################
+          // Mostrar os km adicionados
+          // ######################################
+
+          SizedBox(
+            height: 300,
+            child: _deslocamentos.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Nenhum deslocamento cadastrado.',
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _deslocamentos.length,
+                    itemBuilder: (context, index) {
+                      final deslocamento = _deslocamentos[index];
+
+                      return Card(
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.drive_eta,
+                            color: Colors.blue,
+                          ),
+                          title: Text(
+                            '${deslocamento['km']} Quilômetros',
+                          ),
+                          subtitle: Text(
+                            deslocamento['data'],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ],
       ),
     );

@@ -15,7 +15,7 @@ class SobrePage extends StatelessWidget {
           SizedBox(height: 20),
           Text(
             'Esta aplicação foi desenvolvida para realizar os cálculos de rodagem de chamados dos técnicos de campo, seguindo as regras de negócio da Diebold Nixdorf.',
-            style: TextStyle(fontSize: 20, color: Color.from(alpha: 0.747, red: 0, green: 0, blue: 0)),
+            style: TextStyle(fontSize: 20),//color: Color.from(alpha: 0.747, red: 0, green: 0, blue: 0)),
             
           )
         ],

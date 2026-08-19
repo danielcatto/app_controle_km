@@ -1,3 +1,4 @@
+import 'package:controle_km/pages/add_km_litros_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../pages/inicio_page.dart';
@@ -13,17 +14,24 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/',
           name: 'inicio',
-          pageBuilder: (context, state) => NoTransitionPage(child: InicioPage()),
+          pageBuilder: (context, state) =>
+              NoTransitionPage(child: InicioPage()),
         ),
         GoRoute(
           path: '/calcular',
           name: 'calcular',
-          pageBuilder: (context, state) => NoTransitionPage(child: CalcularKmPage()),
+          pageBuilder: (context, state) =>
+              NoTransitionPage(child: CalcularKmPage()),
         ),
         GoRoute(
           path: '/sobre',
           name: 'sobre',
           pageBuilder: (context, state) => NoTransitionPage(child: SobrePage()),
+        ),
+        GoRoute(
+          path: '/add',
+          name: 'Add Km',
+          pageBuilder: (context, state) => NoTransitionPage(child: AddPage()),
         ),
       ],
     ),
@@ -54,6 +62,8 @@ class _MainShellState extends State<MainShell> {
       case 2:
         context.go('/sobre');
         break;
+      case 3:
+        context.go('/add');
     }
   }
 
@@ -65,6 +75,8 @@ class _MainShellState extends State<MainShell> {
         return 'Calcular KM';
       case 2:
         return 'Sobre';
+      case 3:
+        return 'Add Km';
       default:
         return '';
     }
@@ -75,7 +87,8 @@ class _MainShellState extends State<MainShell> {
     super.didChangeDependencies();
     final location = GoRouter.of(context).location;
     int idx = 0;
-    if (location.startsWith('/calcular')) idx = 1;
+    if (location.startsWith('/calcular'))
+      idx = 1;
     else if (location.startsWith('/sobre')) idx = 2;
     if (idx != _currentIndex) setState(() => _currentIndex = idx);
   }
@@ -84,13 +97,74 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(_titleForIndex(_currentIndex))),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const UserAccountsDrawerHeader(
+              accountName: Text("Usuário"),
+              accountEmail: Text("usuario@email.com"),
+              currentAccountPicture: CircleAvatar(child: Icon(Icons.person)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Início'),
+              selected: _currentIndex == 0,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(0);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate),
+              title: const Text('Calcular KM'),
+              selected: _currentIndex == 1,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(1);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info),
+              title: const Text('Sobre'),
+              selected: _currentIndex == 2,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(2);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Add Km'),
+              selected: _currentIndex == 3,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(3);
+              },
+            ),
+          ],
+        ),
+      ),
       body: widget.child,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTap,
+
+        // --- CORES DO MENU ---
+        backgroundColor:
+            const Color.fromARGB(153, 121, 119, 119), // Cor do fundo do menu
+        selectedItemColor: const Color.fromARGB(
+            255, 241, 241, 241), // Cor do ícone/texto selecionado
+        unselectedItemColor: const Color.fromARGB(
+            255, 216, 197, 197), // Cor dos íconer/textos inativos
+
+        // Define o tipo de fundo (necessário para cores funcionarem corretamente com 4+ itens)
+        type: BottomNavigationBarType.fixed,
+
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Início'),
-          BottomNavigationBarItem(icon: Icon(Icons.calculate), label: 'Calcular'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calculate), label: 'Calcular'),
           BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Sobre'),
         ],
       ),

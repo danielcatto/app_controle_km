@@ -12,7 +12,16 @@ class ControleKmApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'controle_km',
-      theme: ThemeData(primarySwatch: Colors.blue),
+// Tema Dark (Padrão)
+      theme: ThemeData(
+        colorScheme: ColorScheme.dark(
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+
+      themeMode: ThemeMode.dark,
+
       routerConfig: appRouter,
     );
   }
