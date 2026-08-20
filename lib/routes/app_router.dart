@@ -1,4 +1,5 @@
 import 'package:controle_km/pages/add_km_litros_page.dart';
+import 'package:controle_km/pages/medir_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../pages/inicio_page.dart';
@@ -33,6 +34,12 @@ final GoRouter appRouter = GoRouter(
           name: 'Add Km',
           pageBuilder: (context, state) => NoTransitionPage(child: AddPage()),
         ),
+        GoRoute(
+          path: '/medir',
+          name: 'Medir distancia',
+          pageBuilder: (context, state) =>
+              NoTransitionPage(child: RotaGpsPage()),
+        ),
       ],
     ),
   ],
@@ -64,6 +71,10 @@ class _MainShellState extends State<MainShell> {
         break;
       case 3:
         context.go('/add');
+        break;
+      case 4:
+        context.go('/medir');
+        break;
     }
   }
 
@@ -77,6 +88,8 @@ class _MainShellState extends State<MainShell> {
         return 'Sobre';
       case 3:
         return 'Add Km';
+      case 4:
+        return 'Medir Distancia';
       default:
         return '';
     }
@@ -140,6 +153,15 @@ class _MainShellState extends State<MainShell> {
               onTap: () {
                 Navigator.of(context).pop();
                 _onTap(3);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Medir Distância'),
+              selected: _currentIndex == 4,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(4);
               },
             ),
           ],

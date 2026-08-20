@@ -23,19 +23,21 @@ class InicioPage extends StatelessWidget {
             const Text(
               'Bem-vindo ao Controle de KM',
               style: TextStyle(fontSize: 20),
-              
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 244, 241, 54), // Cor do fundo do botão
-              foregroundColor: const Color.fromARGB(255, 7, 4, 4), // Cor do texto e ícone
-              minimumSize: const Size(20, 45), // Largura: 200px | Altura: 45px
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(8), // Bordas arredondadas (opcional)
+                backgroundColor: const Color.fromARGB(
+                    153, 121, 119, 119), // Cor do fundo do botão
+                foregroundColor: const Color.fromARGB(
+                    255, 253, 252, 252), // Cor do texto e ícone
+                minimumSize:
+                    const Size(20, 45), // Largura: 200px | Altura: 45px
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                      8), // Bordas arredondadas (opcional)
+                ),
               ),
-            ),
               onPressed: () => context.go('/add'),
               child: const Text('Adicionar delocamentos'),
             ),
