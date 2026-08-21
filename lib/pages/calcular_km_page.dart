@@ -131,7 +131,7 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
           const SizedBox(height: 12),
 
           Text(
-            'Km total: $_km_total',
+            'Km total: ${(double.tryParse(_km_total.toString()) ?? 0.0).toStringAsFixed(3).replaceAll('.', ',')} KM',
           ),
 
           const SizedBox(height: 12),
@@ -171,6 +171,7 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
             ),
 
           //BOTÃO DELETE
+/*   
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red, // Cor do fundo do botão
@@ -184,6 +185,8 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
             onPressed: _deletarTudo,
             child: const Text('Deletar Tudo'),
           ),
+  
+*/
           // ######################################
           // Mostrar os km adicionados
           // ######################################
@@ -208,10 +211,52 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                             color: Colors.blue,
                           ),
                           title: Text(
-                            '${deslocamento['km']} Quilômetros',
+                            '${(double.tryParse(deslocamento['km'].toString()) ?? 0.0).toStringAsFixed(3).replaceAll('.', ',')} KM',
                           ),
                           subtitle: Text(
                             deslocamento['data'],
+                          ),
+                          // BOTÃO DE DELETAR A LINHA
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            onPressed: () async {
+                              // Exemplo com confirmação antes de deletar
+                              bool? confirmar = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Excluir registro'),
+                                  content: const Text(
+                                      'Deseja realmente apagar este deslocamento?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('Excluir',
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmar == true) {
+                                // 1. Apaga do banco pelo ID
+                                await DatabaseHelper.instance
+                                    .excluirDeslocamento(deslocamento['id']);
+
+                                // 2. Atualiza a tela (chame a sua função de recarregar a lista)
+                                setState(() {
+                                  _carregarDeslocamentos();
+                                });
+                              }
+                            },
                           ),
                         ),
                       );
