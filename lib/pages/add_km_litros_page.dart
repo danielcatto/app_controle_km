@@ -11,22 +11,22 @@ class AddPage extends StatefulWidget {
   State<AddPage> createState() => _AddPageState();
 }
 
-
-
 class _AddPageState extends State<AddPage> {
   final TextEditingController _kmController = TextEditingController();
 
-  
+  final TextEditingController _descricaoController = TextEditingController();
 
   @override
   void dispose() {
     _kmController.dispose();
+    _descricaoController.dispose();
     super.dispose();
   }
 
   void _salvarKm() async {
     final texto = _kmController.text.replaceAll(',', '.');
     final km = double.tryParse(texto);
+    final descricao = _descricaoController.text.trim();
 
     if (km == null || km <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -39,7 +39,7 @@ class _AddPageState extends State<AddPage> {
     }
 
     try {
-      await DatabaseHelper.instance.inserirDeslocamento(km);
+      await DatabaseHelper.instance.inserirDeslocamento(descricao, km);
 
       if (!mounted) return;
 
@@ -88,7 +88,20 @@ class _AddPageState extends State<AddPage> {
           Column(
             children: [
               SizedBox(
-                width: 200,
+                width: 350,
+                child: TextField(
+                  controller: _descricaoController,
+                  //keyboardType:
+                  //const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              SizedBox(
+                width: 350,
                 child: TextField(
                   controller: _kmController,
                   keyboardType:
@@ -105,7 +118,7 @@ class _AddPageState extends State<AddPage> {
                   fixedSize: const Size(120, 40),
                 ),
                 onPressed: _salvarKm,
-                child: const Text('OK'),
+                child: const Text('Add'),
               )
             ],
           ),

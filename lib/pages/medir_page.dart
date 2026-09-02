@@ -14,6 +14,10 @@ class _RotaGpsPageState extends State<RotaGpsPage> {
   StreamSubscription<Position>? _positionStream;
   Position? _ultimaPosicao;
 
+  // Controller para permitir ao usuário alterar a descrição da rota
+  final TextEditingController _descricaoController =
+      TextEditingController(text: 'Rota GPS');
+
   double _distanciaTotalMetros = 0.0;
   bool _emAndamento = false;
 
@@ -67,18 +71,15 @@ class _RotaGpsPageState extends State<RotaGpsPage> {
       _emAndamento = true;
     });
 
-    // Configurações do GPS (alta precisão e atualização a cada 5 metros percorridos)
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5, // Atualiza apenas se o usuário andar mais de 5 metros
+      distanceFilter: 5, // Atualiza a cada 5 metros percorridos
     );
 
-    // Começa a escutar as atualizações de localização em tempo real
     _positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
       (Position position) {
         if (_ultimaPosicao != null) {
-          // Calcula a distância entre o ponto anterior e o atual
           double distanciaEntrePontos = Geolocator.distanceBetween(
             _ultimaPosicao!.latitude,
             _ultimaPosicao!.longitude,
@@ -98,7 +99,7 @@ class _RotaGpsPageState extends State<RotaGpsPage> {
 
   // FINALIZAR A MEDIÇÃO
   void _finalizarMedicao() {
-    _positionStream?.cancel(); // Para o consumo do GPS
+    _positionStream?.cancel();
     _positionStream = null;
 
     setState(() {
@@ -106,24 +107,59 @@ class _RotaGpsPageState extends State<RotaGpsPage> {
     });
 
     double totalKm = _distanciaTotalMetros / 1000;
-    try {
-      DatabaseHelper.instance.inserirDeslocamento(totalKm);
+    _descricaoController.text = 'Rota GPS'; // Valor padrão inicial
 
-      if (!mounted) return;
-    } catch (e) {}
+    // Exibe o Dialog permitindo informar a descrição antes de salvar
     showDialog(
       context: context,
+      barrierDismissible: false, // Impede fechar clicando fora
       builder: (context) => AlertDialog(
         title: const Text('Rota Finalizada!'),
-        content: Text(
-          'Você percorreu: ${totalKm.toStringAsFixed(2)} km\n'
-          '(${_distanciaTotalMetros.toStringAsFixed(0)} metros)',
-          style: const TextStyle(fontSize: 18),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Distância: ${totalKm.toStringAsFixed(2)} km '
+              '(${_distanciaTotalMetros.toStringAsFixed(0)} m)',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _descricaoController,
+              decoration: const InputDecoration(
+                labelText: 'Descrição do Chamado / Cliente',
+                hintText: 'Ex: Atendimento Agência X',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text('Descartar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final desc = _descricaoController.text.trim().isEmpty
+                  ? 'Rota GPS'
+                  : _descricaoController.text.trim();
+
+              // Salva de forma assíncrona com await
+              await DatabaseHelper.instance.inserirDeslocamento(desc, totalKm);
+
+              if (!mounted) return;
+              Navigator.pop(context);
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Rota gravada com sucesso!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Salvar'),
           ),
         ],
       ),
@@ -132,7 +168,8 @@ class _RotaGpsPageState extends State<RotaGpsPage> {
 
   @override
   void dispose() {
-    _positionStream?.cancel(); // Garante o cancelamento ao fechar a tela
+    _positionStream?.cancel();
+    _descricaoController.dispose();
     super.dispose();
   }
 

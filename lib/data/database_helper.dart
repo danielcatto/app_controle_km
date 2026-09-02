@@ -43,6 +43,7 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE deslocamentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        descricao TEXT,
         km REAL NOT NULL,
         data TEXT NOT NULL
       )
@@ -50,12 +51,13 @@ class DatabaseHelper {
   }
 
   // Inserir deslocamento
-  Future<int> inserirDeslocamento(double km) async {
+  Future<int> inserirDeslocamento(String descricao, double km) async {
     final db = await database;
 
     return await db.insert(
       'deslocamentos',
       {
+        'descricao': descricao,
         'km': km,
         'data': DateTime.now().toIso8601String(),
       },

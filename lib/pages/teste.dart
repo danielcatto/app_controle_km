@@ -218,13 +218,14 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                               Row(
                                 children: [
                                   Text(
-                                      '${deslocamento['km'].toStringAsFixed(2)} km'),
+                                    '${(double.tryParse(deslocamento['km'].toString()) ?? 0.0).toStringAsFixed(3).replaceAll('.', ',')} KM',
+                                  ),
                                 ],
                               ),
                               Row(
                                 children: [
                                   Text(
-                                    deslocamento['data'],
+                                    'Data: ${deslocamento['data']}',
                                   ),
                                 ],
                               ),
