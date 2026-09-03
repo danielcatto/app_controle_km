@@ -1,6 +1,7 @@
 import 'package:controle_km/controllers/calcular_consumo.dart';
 import 'package:flutter/material.dart';
 import 'package:controle_km/data/database_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CalcularKmPage extends StatefulWidget {
   const CalcularKmPage({Key? key}) : super(key: key);
@@ -22,9 +23,25 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
   void initState() {
     super.initState();
     _carregarDeslocamentos();
+    _carregarUltimoLitros();
   }
 
-  //CARREGA DADOS PARA A DADOS
+  Future<void> _carregarUltimoLitros() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ultimoLitros = prefs.getString('ultimo_litros');
+
+    if (ultimoLitros != null && mounted) {
+      setState(() {
+        _litrosController.text = ultimoLitros;
+      });
+    }
+  }
+
+  Future<void> _salvarUltimoLitros(String valor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('ultimo_litros', valor);
+  }
+
   Future<void> _carregarDeslocamentos() async {
     final dados = await DatabaseHelper.instance.listarDeslocamentos();
 
@@ -38,15 +55,12 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
 
     setState(() {
       _deslocamentos = dados;
-      _km_total;
     });
   }
 
-  //BOTÃO CALCULAR
   Future<void> _calcular() async {
-    final litros = double.tryParse(
-      _litrosController.text.replaceAll(',', '.'),
-    );
+    final textoLitros = _litrosController.text.replaceAll(',', '.');
+    final litros = double.tryParse(textoLitros);
 
     if (litros == null || litros <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,14 +68,15 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
           content: Text('Insira valores válidos'),
         ),
       );
-
       return;
     }
+
+    await _salvarUltimoLitros(_litrosController.text);
 
     final calcular = CalcularConsumo();
 
     final resultado = calcular.calcularConsumo(
-      _km_total!,
+      _km_total ?? 0.0,
       litros,
     );
 
@@ -69,11 +84,7 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
       _resultado = resultado;
     });
   }
-  //FINAL DOS CALCULOS DA FUNÇÃO CALULAR()
 
-  //Deletar tudo
-
-  //BOTÃO CALCULAR
   Future<void> _deletarTudo() async {
     await DatabaseHelper.instance.deletarTodosDeslocamentos();
 
@@ -92,13 +103,41 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
       ),
     );
   }
-//final de deletar tudo
+
+  // Modal para confirmar a exclusão completa de dados
+  Future<void> _confirmarDeletarTudo() async {
+    bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Limpar todo o histórico'),
+        content: const Text(
+          'Deseja realmente apagar TODOS os deslocamentos cadastrados? Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Apagar Tudo',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true) {
+      await _deletarTudo();
+    }
+  }
 
   @override
   void dispose() {
     _distController.dispose();
     _litrosController.dispose();
-
     super.dispose();
   }
 
@@ -115,45 +154,57 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
               fontSize: 18,
             ),
           ),
-
           const SizedBox(height: 12),
-
-          TextField(
-            controller: _litrosController,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
-            decoration: const InputDecoration(
-              labelText: 'Litros consumidos',
+          SizedBox(
+            width: 200,
+            child: TextField(
+              controller: _litrosController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              onChanged: (valor) => _salvarUltimoLitros(valor),
+              decoration: const InputDecoration(
+                labelText: 'Litros consumidos',
+                border: OutlineInputBorder(),
+              ),
             ),
           ),
-
           const SizedBox(height: 12),
-
           Text(
             'Km total: ${(double.tryParse(_km_total.toString()) ?? 0.0).toStringAsFixed(3).replaceAll('.', ',')} KM',
           ),
-
           const SizedBox(height: 12),
-
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(
-                  153, 121, 119, 119), // Cor do fundo do botão
-              foregroundColor: const Color.fromARGB(
-                  255, 253, 252, 252), // Cor do texto e ícone
-              minimumSize: const Size(20, 45), // Largura: 200px | Altura: 45px
+              backgroundColor: const Color.fromARGB(153, 121, 119, 119),
+              foregroundColor: const Color.fromARGB(255, 253, 252, 252),
+              minimumSize: const Size(20, 45),
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(8), // Bordas arredondadas (opcional)
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             onPressed: _calcular,
             child: const Text('Calcular'),
           ),
+          const SizedBox(height: 8),
+
+          // --- BOTÃO ADICIONADO PARA DELETAR TUDO ---
+          if (_deslocamentos.isNotEmpty)
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red),
+                minimumSize: const Size(20, 45),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: _confirmarDeletarTudo,
+              icon: const Icon(Icons.delete_forever, color: Colors.red),
+              label: const Text('Limpar Todos os Deslocamentos'),
+            ),
 
           const SizedBox(height: 20),
-
           if (_resultado != null)
             Center(
               child: Text(
@@ -164,33 +215,11 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                 ),
               ),
             ),
-
           if (_resultado == null)
             const Text(
               'Preencha valores válidos para calcular.',
             ),
-
-          //BOTÃO DELETE
-/*   
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red, // Cor do fundo do botão
-              foregroundColor: Colors.white, // Cor do texto e ícone
-              minimumSize: const Size(20, 45), // Largura: 200px | Altura: 45px
-              shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(8), // Bordas arredondadas (opcional)
-              ),
-            ),
-            onPressed: _deletarTudo,
-            child: const Text('Deletar Tudo'),
-          ),
-  
-*/
-          // ######################################
-          // Mostrar os km adicionados
-          // ######################################
-
+          const SizedBox(height: 20),
           SizedBox(
             height: 300,
             child: _deslocamentos.isEmpty
@@ -203,6 +232,8 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                     itemCount: _deslocamentos.length,
                     itemBuilder: (context, index) {
                       final deslocamento = _deslocamentos[index];
+                      final double kmValor =
+                          (deslocamento['km'] as num).toDouble();
 
                       return Card(
                         child: ListTile(
@@ -211,33 +242,21 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                             color: Colors.blue,
                           ),
                           title: Text(
-                            '${deslocamento['descricao']}',
+                            '${deslocamento['descricao'] ?? 'Sem descrição'}',
                           ),
                           subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                      '${deslocamento['km'].toStringAsFixed(2)} km'),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    deslocamento['data'],
-                                  ),
-                                ],
-                              ),
+                              Text('${kmValor.toStringAsFixed(2)} km'),
+                              Text(deslocamento['data']),
                             ],
                           ),
-                          // BOTÃO DE DELETAR A LINHA
                           trailing: IconButton(
                             icon: const Icon(
                               Icons.delete,
                               color: Colors.red,
                             ),
                             onPressed: () async {
-                              // Exemplo com confirmação antes de deletar
                               bool? confirmar = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -261,11 +280,8 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
                               );
 
                               if (confirmar == true) {
-                                // 1. Apaga do banco pelo ID
                                 await DatabaseHelper.instance
                                     .excluirDeslocamento(deslocamento['id']);
-
-                                // 2. Atualiza a tela (chame a sua função de recarregar a lista)
                                 setState(() {
                                   _carregarDeslocamentos();
                                 });

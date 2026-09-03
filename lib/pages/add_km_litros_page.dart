@@ -44,7 +44,7 @@ class _AddPageState extends State<AddPage> {
       if (!mounted) return;
 
       _kmController.clear();
-
+      _descricaoController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

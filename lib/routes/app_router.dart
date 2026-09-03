@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../pages/inicio_page.dart';
 import '../pages/calcular_km_page.dart';
 import '../pages/sobre_page.dart';
+import '../pages/config_page.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -34,11 +35,19 @@ final GoRouter appRouter = GoRouter(
           name: 'Add Km',
           pageBuilder: (context, state) => NoTransitionPage(child: AddPage()),
         ),
+        
         GoRoute(
           path: '/medir',
           name: 'Medir distancia',
           pageBuilder: (context, state) =>
               NoTransitionPage(child: RotaGpsPage()),
+        ),
+
+        GoRoute(
+          path: '/config',
+          name: 'Configurações',
+          pageBuilder: (context, state) =>
+              NoTransitionPage(child: ConfigPage()),
         ),
       ],
     ),
@@ -75,6 +84,9 @@ class _MainShellState extends State<MainShell> {
       case 4:
         context.go('/medir');
         break;
+      case 5:
+        context.go('/config');
+        break;
     }
   }
 
@@ -90,6 +102,8 @@ class _MainShellState extends State<MainShell> {
         return 'Add Km';
       case 4:
         return 'Medir Distancia';
+      case 5:
+        return 'Configurações';
       default:
         return '';
     }
@@ -164,6 +178,16 @@ class _MainShellState extends State<MainShell> {
                 _onTap(4);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Configurações'),
+              selected: _currentIndex == 5,
+              onTap: () {
+                Navigator.of(context).pop();
+                _onTap(5);
+              },
+            ),
+
           ],
         ),
       ),
