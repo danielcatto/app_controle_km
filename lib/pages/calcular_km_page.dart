@@ -75,7 +75,7 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
 
     final calcular = CalcularConsumo();
 
-    final resultado = calcular.calcularConsumo(
+    final resultado = await calcular.calcularConsumo(
       _km_total ?? 0.0,
       litros,
     );
@@ -206,19 +206,28 @@ class _CalcularKmPageState extends State<CalcularKmPage> {
 
           const SizedBox(height: 20),
           if (_resultado != null)
-            Center(
-              child: Text(
-                '${_resultado!.toStringAsFixed(2)} Litros\n'
-                'Para você abastecer',
-                style: const TextStyle(
-                  fontSize: 20,
+            if (_resultado! >= 0)
+              Center(
+                child: Text(
+                  '${_resultado!.toStringAsFixed(2)} Litros\n'
+                  'Para você abastecer',
+                  style: const TextStyle(
+                    fontSize: 20,
+                  ),
+                ),
+              )
+            else if (_resultado! < 0)
+              Center(
+                child: Text(
+                  'Você Abasteceu a mais\n'
+                  '${_resultado!.abs().toStringAsFixed(2)} Litros\n',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.yellow,
+                  ),
                 ),
               ),
-            ),
-          if (_resultado == null)
-            const Text(
-              'Preencha valores válidos para calcular.',
-            ),
+
           const SizedBox(height: 20),
           SizedBox(
             height: 300,

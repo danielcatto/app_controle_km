@@ -22,6 +22,7 @@ dev_dependencies:
   sqflite: ^2.3.0
   path: ^1.9.0
   flutter_launcher_icons: "^0.13.1" # A versão pode variar
+  sqflite_common_ffi: ^2.4.3
 
 flutter_launcher_icons:
   android: "launcher_icon"

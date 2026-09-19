@@ -30,16 +30,19 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
+  // Criação das tabelas
   // Criação das tabelas
   Future<void> _onCreate(
     Database db,
     int version,
   ) async {
+    // Tabela de deslocamentos
     await db.execute('''
       CREATE TABLE deslocamentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +51,32 @@ class DatabaseHelper {
         data TEXT NOT NULL
       )
     ''');
+
+    await _criarTabelaConfiguracoes(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _criarTabelaConfiguracoes(db);
+    }
+  }
+
+  Future<void> _criarTabelaConfiguracoes(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS configuracoes (
+        id INTEGER PRIMARY KEY,
+        tipo_combustivel TEXT
+      )
+    ''');
+
+    await db.insert(
+      'configuracoes',
+      {
+        'id': 1,
+        'tipo_combustivel': 'Etanol',
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 
   // Inserir deslocamento
@@ -108,5 +137,14 @@ class DatabaseHelper {
     final db = await database;
 
     await db.delete('deslocamentos');
+  }
+
+  Future<void> salvarCombustivelNoBanco(String tipo) async {
+    final db = await database; // Sua função de conexão SQLite
+    await db.insert(
+      'configuracoes',
+      {'id': 1, 'tipo_combustivel': tipo},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 }

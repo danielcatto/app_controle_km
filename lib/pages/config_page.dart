@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:controle_km/data/database_helper.dart';
 
 class ConfigPage extends StatefulWidget {
   const ConfigPage({Key? key}) : super(key: key);
@@ -8,8 +10,33 @@ class ConfigPage extends StatefulWidget {
 }
 
 class _ConfigPageState extends State<ConfigPage> {
-  // Estado que armazena a seleção atual
-  String _tipoCombustivel = 'Etanol'; // Valor padrão
+  String _tipoCombustivel = 'Etanol'; // Valor padrão inicial
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarCombustivelSalvo();
+  }
+
+  // Carrega o valor salvo no armazenamento interno
+  Future<void> _carregarCombustivelSalvo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tipoCombustivel = prefs.getString('tipo_combustivel') ?? 'Etanol';
+    await DatabaseHelper.instance.salvarCombustivelNoBanco(tipoCombustivel);
+
+    if (!mounted) return;
+
+    setState(() {
+      _tipoCombustivel = tipoCombustivel;
+    });
+  }
+
+  // Salva o novo valor no armazenamento interno
+  Future<void> _salvarCombustivel(String novoValor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('tipo_combustivel', novoValor);
+    await DatabaseHelper.instance.salvarCombustivelNoBanco(novoValor);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +65,12 @@ class _ConfigPageState extends State<ConfigPage> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Campo Dropdown Inserido
               SizedBox(
                 width: 220,
                 child: DropdownButtonFormField<String>(
-                  value: _tipoCombustivel,
+                  initialValue: _tipoCombustivel,
                   decoration: const InputDecoration(
-                    labelText: 'Tipo de combustível padrão',
+                    labelText: 'Tipo de combustível',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
@@ -71,6 +96,8 @@ class _ConfigPageState extends State<ConfigPage> {
                       setState(() {
                         _tipoCombustivel = novoValor;
                       });
+                      // Salva a alteração no banco/preferências
+                      _salvarCombustivel(novoValor);
                     }
                   },
                 ),
