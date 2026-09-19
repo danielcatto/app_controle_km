@@ -1,7 +1,7 @@
 name: 'controle_km'
 description: 'App para controle de km'
 publish_to: 'daniel catto'
-version: 1.0.1+2
+version: 1.0.2+3
 environment:
   sdk: '>=2.18.0 <3.0.0'
 
